@@ -15,8 +15,6 @@
     canvas: document.querySelector("#glCanvas"),
     idPreview: document.querySelector("#idPreview"),
     webglError: document.querySelector("#webglError"),
-    gpuStatus: document.querySelector("#gpuStatus"),
-    frameReadout: document.querySelector("#frameReadout"),
     textInput: document.querySelector("#textInput"),
     intensityInput: document.querySelector("#intensityInput"),
     intensityValue: document.querySelector("#intensityValue"),
@@ -29,7 +27,6 @@
     playButton: document.querySelector("#playButton"),
     resetButton: document.querySelector("#resetButton"),
     characterLegend: document.querySelector("#characterLegend"),
-    characterCount: document.querySelector("#characterCount"),
   };
 
   const state = {
@@ -37,7 +34,6 @@
     time: 0,
     playing: !window.matchMedia("(prefers-reduced-motion: reduce)").matches,
     previousTimestamp: 0,
-    frame: 0,
     glyphs: [],
   };
 
@@ -62,7 +58,6 @@
   if (!gl) {
     ui.webglError.hidden = false;
     ui.webglError.textContent = "当前浏览器无法创建 WebGL 上下文。";
-    ui.gpuStatus.textContent = "WebGL 不可用";
     return;
   }
 
@@ -531,7 +526,6 @@
   } catch (error) {
     ui.webglError.hidden = false;
     ui.webglError.textContent = `Shader 初始化失败：${error.message}`;
-    ui.gpuStatus.textContent = "Shader 初始化失败";
     return;
   }
 
@@ -765,7 +759,6 @@
       chip.append(character, metadata);
       ui.characterLegend.append(chip);
     });
-    ui.characterCount.textContent = `${state.glyphs.length} GLYPHS`;
   }
 
   function resizeCanvas() {
@@ -807,7 +800,6 @@
     const displayTime = state.time % TIMELINE_DURATION;
     ui.timelineInput.value = displayTime.toFixed(2);
     ui.timeValue.value = `${displayTime.toFixed(2).padStart(5, "0")} s`;
-    ui.frameReadout.textContent = String(state.frame % 10000).padStart(4, "0");
   }
 
   function animate(timestamp) {
@@ -818,7 +810,6 @@
     state.previousTimestamp = timestamp;
     if (state.playing) {
       state.time += delta * state.speed;
-      state.frame += 1;
       updateTimelineUi();
     }
     draw();
@@ -873,18 +864,12 @@
   ui.playButton.addEventListener("click", () => setPlaying(!state.playing));
 
   ui.resetButton.addEventListener("click", () => {
-    Object.assign(state, DEFAULTS, { time: 0, frame: 0 });
+    Object.assign(state, DEFAULTS, { time: 0 });
     syncControls();
     rebuildTextTextures();
   });
 
   window.addEventListener("resize", resizeCanvas, { passive: true });
-
-  const debugRenderer = gl.getExtension("WEBGL_debug_renderer_info");
-  const renderer = debugRenderer
-    ? gl.getParameter(debugRenderer.UNMASKED_RENDERER_WEBGL)
-    : gl.getParameter(gl.RENDERER);
-  ui.gpuStatus.textContent = `WebGL 1 · ${renderer}`;
 
   syncControls();
   resizeCanvas();

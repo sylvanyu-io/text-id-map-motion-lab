@@ -5,65 +5,40 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="light" />
     <title>Text ID Map Shader Lab</title>
-    <link rel="stylesheet" href="./styles.css?v=7" />
+    <link rel="stylesheet" href="./styles.css?v=8" />
   </head>
   <body>
     <main class="lab-shell">
       <header class="lab-header">
-        <div>
-          <p class="eyebrow">WEBGL · TEXT PIPELINE PROTOTYPE</p>
-          <h1>Text ID Map</h1>
-        </div>
-        <div class="header-note">
-          <span class="status-dot" aria-hidden="true"></span>
-          <span id="gpuStatus">正在初始化 WebGL</span>
-        </div>
+        <h1>Text ID Map</h1>
+        <p>用一张字符 ID Map 驱动单 Quad 上的逐字变形与合成。</p>
       </header>
 
       <section class="workspace" aria-label="文本 ID Map 实验区">
         <div class="stage-column">
           <div class="stage-frame">
-            <div class="stage-meta">
-              <span>FINAL COMPOSITE</span>
-              <span id="frameReadout">0000</span>
-            </div>
             <canvas id="glCanvas" aria-label="逐字 Shader 最终效果"></canvas>
             <div id="webglError" class="webgl-error" hidden></div>
           </div>
 
           <div class="debug-grid">
             <article class="debug-panel">
-              <div class="panel-heading">
-                <div>
-                  <p class="panel-kicker">AUXILIARY TEXTURE</p>
-                  <h2>字符 ID Map</h2>
-                </div>
-                <span>RG8 · NEAREST</span>
-              </div>
+              <h2>字符 ID Map</h2>
               <canvas id="idPreview" width="1600" height="900" aria-label="字符 ID Map 调试视图"></canvas>
-              <p class="panel-caption">每个排版单元写入唯一灰度 ID；字形 Alpha 与字符 ID 打包在独立通道。</p>
+              <p class="panel-caption">R 通道存字形 Alpha，G 通道存字符 ID；ID 使用 NEAREST 采样。</p>
             </article>
 
             <article class="debug-panel character-panel">
-              <div class="panel-heading">
-                <div>
-                  <p class="panel-kicker">INDEX INSPECTOR</p>
-                  <h2>逐字索引</h2>
-                </div>
-                <span id="characterCount">0 GLYPHS</span>
-              </div>
+              <h2>字符索引</h2>
               <div id="characterLegend" class="character-legend" aria-live="polite"></div>
+              <p class="panel-caption">每个排版单元对应唯一 ID，用于查找字符中心、字符域与字形尺寸。</p>
             </article>
           </div>
         </div>
 
         <aside class="control-panel" aria-label="Shader 参数">
-          <div class="control-header">
-            <div>
-              <p class="panel-kicker">LIVE PARAMETERS</p>
-              <h2>逐字控制</h2>
-            </div>
-            <button id="resetButton" class="text-button" type="button">重置</button>
+          <div class="control-actions">
+            <button id="resetButton" class="text-button" type="button">恢复默认</button>
           </div>
 
           <label class="field-block" for="textInput">
@@ -95,24 +70,27 @@
             <button id="playButton" class="play-button" type="button" aria-pressed="true">暂停</button>
           </div>
 
-          <dl class="pipeline-notes">
-            <div>
-              <dt>PACKED MAP</dt>
-              <dd>R: 字形 Alpha · G: 字符 ID</dd>
-            </div>
-            <div>
-              <dt>COMPOSITE</dt>
-              <dd>ID → 位移 / 缩放 / 切片 / 显隐</dd>
-            </div>
-            <div>
-              <dt>ID DOMAIN</dt>
-              <dd>四向 Padding · Bounds LUT · 单 Quad</dd>
-            </div>
-          </dl>
+          <section class="technical-notes" aria-labelledby="technicalTitle">
+            <h2 id="technicalTitle">实现说明</h2>
+            <dl class="pipeline-notes">
+              <div>
+                <dt>打包纹理</dt>
+                <dd>R: 字形 Alpha · G: 字符 ID</dd>
+              </div>
+              <div>
+                <dt>合成方式</dt>
+                <dd>ID → 位移 / 缩放 / 切片 / 显隐</dd>
+              </div>
+              <div>
+                <dt>字符域</dt>
+                <dd>四向 Padding · Bounds LUT · 单 Quad</dd>
+              </div>
+            </dl>
+          </section>
         </aside>
       </section>
     </main>
 
-    <script src="./app.js?v=45"></script>
+    <script src="./app.js?v=46"></script>
   </body>
 </html>
