@@ -245,13 +245,6 @@
       );
       float flightEase = 1.0 - pow(1.0 - introProgress, 3.0);
       float flightRemain = 1.0 - flightEase;
-      float introActive =
-        step(introStart, time) *
-        (1.0 - step(introStart + 0.49, time));
-      float introScatterAmount =
-        introActive * pow(1.0 - introProgress, 0.72);
-      float introSandBlend =
-        introActive * (1.0 - smoothstep(0.62, 0.94, introProgress));
       float landingRaw = (time - introStart - 0.43) / 0.28;
       float landingProgress = clamp(landingRaw, 0.0, 1.0);
       float landingActive = step(0.0, landingRaw) * (1.0 - step(1.0, landingRaw));
@@ -359,8 +352,7 @@
       float phaseTear =
         (sliceNoise * 2.0 - 1.0) * horizontalSlack * 1.45 *
         phaseBurst * phaseImpulse * intensity * sliceGate;
-      float particleTravel =
-        (fractureAmount + introScatterAmount * 0.88) * intensity *
+      float particleTravel = fractureAmount * intensity *
         mix(0.42, 1.22, pow(fragmentNoise, 0.72));
       float fractureTear =
         fragmentDirection.x * horizontalSlack * mix(0.72, 1.62, fragmentNoise) *
@@ -427,12 +419,7 @@
 
       float fractureSand = smoothstep(0.02, 0.22, fractureProgress) * fractureStage;
       float assembleSand = (1.0 - smoothstep(0.66, 0.98, assembleProgress)) * assembleStage;
-      float sandBlend = clamp(
-        max(introSandBlend, fractureSand + assembleSand),
-        0.0,
-        1.0
-      );
-      float introReveal = max(introSliceVisible, introSandBlend);
+      float sandBlend = clamp(fractureSand + assembleSand, 0.0, 1.0);
       float visibility = mix(1.0, particleOpacity, sandBlend);
       float crackMask = mix(1.0, particleMask, sandBlend);
       float fragmentEdge = 1.0 - smoothstep(
@@ -476,18 +463,18 @@
         1.0
       );
 
-      baseAlpha *= visibility * crackMask * introReveal;
-      redAlpha *= visibility * crackMask * introReveal;
-      cyanAlpha *= visibility * crackMask * introReveal;
+      baseAlpha *= visibility * crackMask * introSliceVisible;
+      redAlpha *= visibility * crackMask * introSliceVisible;
+      cyanAlpha *= visibility * crackMask * introSliceVisible;
       float echoStrength = clamp(
         phaseBurst * phaseImpulse,
         0.0,
         1.0
       ) * (1.0 - fragmentActive);
-      echoA *= visibility * echoStrength * introReveal;
-      echoB *= visibility * echoStrength * introReveal;
-      echoC *= visibility * echoStrength * introReveal;
-      outline *= visibility * introReveal;
+      echoA *= visibility * echoStrength * introSliceVisible;
+      echoB *= visibility * echoStrength * introSliceVisible;
+      echoC *= visibility * echoStrength * introSliceVisible;
+      outline *= visibility * introSliceVisible;
 
       vec3 textColor = mix(PAPER, ICE, clamp(assembleFront * 0.48, 0.0, 1.0));
       textColor = mix(textColor, SIGNAL, clamp(flash * 0.72 + fractureAmount * sliceGate * 0.18, 0.0, 1.0));
