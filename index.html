@@ -5,35 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="light" />
     <title>Text ID Map Shader Lab</title>
-    <link rel="stylesheet" href="./styles.css?v=9" />
+    <link rel="stylesheet" href="./styles.css?v=10" />
   </head>
   <body>
     <main class="lab-shell">
       <header class="lab-header">
-        <h1>Text ID Map</h1>
-        <p>用一张字符 ID Map 驱动单 Quad 上的逐字变形与合成。</p>
+        <h1>Text <span>ID Map</span></h1>
+        <p>用一张字符 ID Map 驱动 <strong>单 Quad</strong> 上的逐字变形与合成。</p>
       </header>
 
       <section class="workspace" aria-label="文本 ID Map 实验区">
-        <div class="stage-column">
-          <div class="stage-frame">
-            <canvas id="glCanvas" aria-label="逐字 Shader 最终效果"></canvas>
-            <div id="webglError" class="webgl-error" hidden></div>
-          </div>
-
-          <div class="debug-grid">
-            <article class="debug-panel map-panel">
-              <h2>字符 ID Map</h2>
-              <canvas id="idPreview" width="1600" height="900" aria-label="字符 ID Map 调试视图"></canvas>
-              <p class="panel-caption">R 通道存字形 Alpha，G 通道存字符 ID；ID 使用 NEAREST 采样。</p>
-            </article>
-
-            <article class="debug-panel character-panel index-panel">
-              <h2>字符索引</h2>
-              <div id="characterLegend" class="character-legend" aria-live="polite"></div>
-              <p class="panel-caption">每个排版单元对应唯一 ID，用于查找字符中心、字符域与字形尺寸。</p>
-            </article>
-          </div>
+        <div class="stage-frame">
+          <canvas id="glCanvas" aria-label="逐字 Shader 最终效果"></canvas>
+          <div id="webglError" class="webgl-error" hidden></div>
         </div>
 
         <aside class="control-panel" aria-label="Shader 参数">
@@ -95,6 +79,20 @@
             </dl>
           </section>
         </aside>
+
+        <div class="debug-grid">
+          <article class="debug-panel map-panel">
+            <h2>字符 <span>ID Map</span></h2>
+            <canvas id="idPreview" width="1600" height="900" aria-label="字符 ID Map 调试视图"></canvas>
+            <p class="panel-caption"><strong>R</strong> 通道存字形 Alpha，<strong>G</strong> 通道存字符 ID；ID 使用 NEAREST 采样。</p>
+          </article>
+
+          <article class="debug-panel character-panel index-panel">
+            <h2>字符索引</h2>
+            <div id="characterLegend" class="character-legend" aria-live="polite"></div>
+            <p class="panel-caption">每个排版单元对应唯一 ID，用于查找字符中心、字符域与字形尺寸。</p>
+          </article>
+        </div>
       </section>
     </main>
 
