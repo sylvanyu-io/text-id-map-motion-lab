@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <title>Text ID Map Shader Lab</title>
+    <link rel="stylesheet" href="./styles.css?v=7" />
+  </head>
+  <body>
+    <main class="lab-shell">
+      <header class="lab-header">
+        <div>
+          <p class="eyebrow">WEBGL · TEXT PIPELINE PROTOTYPE</p>
+          <h1>Text ID Map</h1>
+        </div>
+        <div class="header-note">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span id="gpuStatus">正在初始化 WebGL</span>
+        </div>
+      </header>
+
+      <section class="workspace" aria-label="文本 ID Map 实验区">
+        <div class="stage-column">
+          <div class="stage-frame">
+            <div class="stage-meta">
+              <span>FINAL COMPOSITE</span>
+              <span id="frameReadout">0000</span>
+            </div>
+            <canvas id="glCanvas" aria-label="逐字 Shader 最终效果"></canvas>
+            <div id="webglError" class="webgl-error" hidden></div>
+          </div>
+
+          <div class="debug-grid">
+            <article class="debug-panel">
+              <div class="panel-heading">
+                <div>
+                  <p class="panel-kicker">AUXILIARY TEXTURE</p>
+                  <h2>字符 ID Map</h2>
+                </div>
+                <span>RG8 · NEAREST</span>
+              </div>
+              <canvas id="idPreview" width="1600" height="900" aria-label="字符 ID Map 调试视图"></canvas>
+              <p class="panel-caption">每个排版单元写入唯一灰度 ID；字形 Alpha 与字符 ID 打包在独立通道。</p>
+            </article>
+
+            <article class="debug-panel character-panel">
+              <div class="panel-heading">
+                <div>
+                  <p class="panel-kicker">INDEX INSPECTOR</p>
+                  <h2>逐字索引</h2>
+                </div>
+                <span id="characterCount">0 GLYPHS</span>
+              </div>
+              <div id="characterLegend" class="character-legend" aria-live="polite"></div>
+            </article>
+          </div>
+        </div>
+
+        <aside class="control-panel" aria-label="Shader 参数">
+          <div class="control-header">
+            <div>
+              <p class="panel-kicker">LIVE PARAMETERS</p>
+              <h2>逐字控制</h2>
+            </div>
+            <button id="resetButton" class="text-button" type="button">重置</button>
+          </div>
+
+          <label class="field-block" for="textInput">
+            <span>文字</span>
+            <input id="textInput" type="text" value="实时动效引擎" maxlength="28" autocomplete="off" />
+          </label>
+
+          <label class="range-field" for="intensityInput">
+            <span class="range-label"><span>强度</span><output id="intensityValue">88%</output></span>
+            <input id="intensityInput" type="range" min="0" max="100" value="88" step="1" />
+          </label>
+
+          <label class="range-field" for="speedInput">
+            <span class="range-label"><span>速度</span><output id="speedValue">1.00×</output></span>
+            <input id="speedInput" type="range" min="0.15" max="2.5" value="1" step="0.05" />
+          </label>
+
+          <label class="range-field" for="delayInput">
+            <span class="range-label"><span>字符相位</span><output id="delayValue">0.68</output></span>
+            <input id="delayInput" type="range" min="0" max="1.5" value="0.68" step="0.01" />
+          </label>
+
+          <div class="timeline-block">
+            <div class="range-label">
+              <span>时间轴</span>
+              <output id="timeValue">00.00 s</output>
+            </div>
+            <input id="timelineInput" type="range" min="0" max="7.2" value="0" step="0.01" aria-label="时间轴" />
+            <button id="playButton" class="play-button" type="button" aria-pressed="true">暂停</button>
+          </div>
+
+          <dl class="pipeline-notes">
+            <div>
+              <dt>PACKED MAP</dt>
+              <dd>R: 字形 Alpha · G: 字符 ID</dd>
+            </div>
+            <div>
+              <dt>COMPOSITE</dt>
+              <dd>ID → 位移 / 缩放 / 切片 / 显隐</dd>
+            </div>
+            <div>
+              <dt>ID DOMAIN</dt>
+              <dd>四向 Padding · Bounds LUT · 单 Quad</dd>
+            </div>
+          </dl>
+        </aside>
+      </section>
+    </main>
+
+    <script src="./app.js?v=43"></script>
+  </body>
+</html>
