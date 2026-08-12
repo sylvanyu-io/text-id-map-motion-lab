@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="light" />
     <title>Text ID Map Shader Lab</title>
-    <link rel="stylesheet" href="./styles.css?v=8" />
+    <link rel="stylesheet" href="./styles.css?v=9" />
   </head>
   <body>
     <main class="lab-shell">
@@ -22,13 +22,13 @@
           </div>
 
           <div class="debug-grid">
-            <article class="debug-panel">
+            <article class="debug-panel map-panel">
               <h2>字符 ID Map</h2>
               <canvas id="idPreview" width="1600" height="900" aria-label="字符 ID Map 调试视图"></canvas>
               <p class="panel-caption">R 通道存字形 Alpha，G 通道存字符 ID；ID 使用 NEAREST 采样。</p>
             </article>
 
-            <article class="debug-panel character-panel">
+            <article class="debug-panel character-panel index-panel">
               <h2>字符索引</h2>
               <div id="characterLegend" class="character-legend" aria-live="polite"></div>
               <p class="panel-caption">每个排版单元对应唯一 ID，用于查找字符中心、字符域与字形尺寸。</p>
@@ -37,38 +37,45 @@
         </div>
 
         <aside class="control-panel" aria-label="Shader 参数">
-          <div class="control-actions">
+          <div class="control-header">
+            <h2>参数</h2>
             <button id="resetButton" class="text-button" type="button">恢复默认</button>
           </div>
 
-          <label class="field-block" for="textInput">
-            <span>文字</span>
-            <input id="textInput" type="text" value="实时动效引擎" maxlength="28" autocomplete="off" />
-          </label>
+          <section class="control-section text-section">
+            <h3>文字</h3>
+            <label class="field-block" for="textInput">
+              <span class="sr-only">文字内容</span>
+              <input id="textInput" type="text" value="实时动效引擎" maxlength="28" autocomplete="off" />
+            </label>
+          </section>
 
-          <label class="range-field" for="intensityInput">
-            <span class="range-label"><span>强度</span><output id="intensityValue">88%</output></span>
-            <input id="intensityInput" type="range" min="0" max="100" value="88" step="1" />
-          </label>
+          <section class="control-section motion-section">
+            <h3>动画</h3>
+            <label class="range-field" for="intensityInput">
+              <span class="range-label"><span>强度</span><output id="intensityValue">88%</output></span>
+              <input id="intensityInput" type="range" min="0" max="100" value="88" step="1" />
+            </label>
 
-          <label class="range-field" for="speedInput">
-            <span class="range-label"><span>速度</span><output id="speedValue">1.00×</output></span>
-            <input id="speedInput" type="range" min="0.15" max="2.5" value="1" step="0.05" />
-          </label>
+            <label class="range-field" for="speedInput">
+              <span class="range-label"><span>速度</span><output id="speedValue">1.00×</output></span>
+              <input id="speedInput" type="range" min="0.15" max="2.5" value="1" step="0.05" />
+            </label>
 
-          <label class="range-field" for="delayInput">
-            <span class="range-label"><span>字符相位</span><output id="delayValue">0.68</output></span>
-            <input id="delayInput" type="range" min="0" max="1.5" value="0.68" step="0.01" />
-          </label>
+            <label class="range-field" for="delayInput">
+              <span class="range-label"><span>字符相位</span><output id="delayValue">0.68</output></span>
+              <input id="delayInput" type="range" min="0" max="1.5" value="0.68" step="0.01" />
+            </label>
 
-          <div class="timeline-block">
-            <div class="range-label">
-              <span>时间轴</span>
-              <output id="timeValue">00.00 s</output>
+            <div class="timeline-block">
+              <div class="range-label">
+                <span>时间轴</span>
+                <output id="timeValue">00.00 s</output>
+              </div>
+              <input id="timelineInput" type="range" min="0" max="5.6" value="0" step="0.01" aria-label="时间轴" />
+              <button id="playButton" class="play-button" type="button" aria-pressed="true">暂停</button>
             </div>
-            <input id="timelineInput" type="range" min="0" max="5.6" value="0" step="0.01" aria-label="时间轴" />
-            <button id="playButton" class="play-button" type="button" aria-pressed="true">暂停</button>
-          </div>
+          </section>
 
           <section class="technical-notes" aria-labelledby="technicalTitle">
             <h2 id="technicalTitle">实现说明</h2>
@@ -91,6 +98,6 @@
       </section>
     </main>
 
-    <script src="./app.js?v=46"></script>
+    <script src="./app.js?v=47"></script>
   </body>
 </html>
