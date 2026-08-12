@@ -139,14 +139,14 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border: 1px s
 .play-button { width: 100%; min-height: 36px; margin-top: 5px; border: 1px solid var(--signal); border-radius: var(--radius-sm); color: var(--paper-raised); background: var(--signal); font-weight: 750; }
 .play-button:hover { border-color: var(--ink); background: var(--ink); }
 
-.technical-notes { min-height: 0; padding: 13px 16px 12px; color: var(--stage-ink); background: var(--ink); }
+.technical-notes { min-height: 0; padding: 13px 16px 12px; color: var(--ink); background: var(--paper-muted); }
 .technical-notes h2 { color: var(--signal); font-size: 15px; font-weight: 680; letter-spacing: -0.02em; }
 .pipeline-notes { margin: 7px 0 0; }
-.pipeline-notes > div { display: grid; grid-template-columns: 68px 1fr; gap: 8px; padding: 6px 0; border-top: 1px solid rgba(243, 239, 229, 0.16); }
+.pipeline-notes > div { display: grid; grid-template-columns: 68px 1fr; gap: 8px; padding: 6px 0; border-top: 1px solid rgba(75, 72, 65, 0.28); }
 .pipeline-notes > div:first-child { border-top: 0; }
 .pipeline-notes dt, .pipeline-notes dd { margin: 0; }
-.pipeline-notes dt { color: var(--stage-ink); font-size: 11px; font-weight: 680; line-height: 1.5; }
-.pipeline-notes dd { color: #ddd6c9; font-size: 11px; line-height: 1.5; }
+.pipeline-notes dt { color: var(--ink); font-size: 11px; font-weight: 680; line-height: 1.5; }
+.pipeline-notes dd { color: var(--ink-soft); font-size: 11px; line-height: 1.5; }
 
 .debug-panel {
   min-width: 0;
@@ -187,7 +187,7 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border: 1px s
   .control-header { grid-column: 1 / -1; }
   .text-section { grid-column: 1; grid-row: 2; border-right: 1px solid var(--line); }
   .motion-section { grid-column: 2; grid-row: 2 / 4; border-bottom: 0; }
-  .technical-notes { grid-column: 1; grid-row: 3; }
+  .technical-notes { grid-column: 1; grid-row: 3; border-right: 1px solid var(--line); }
 }
 
 @media (max-width: 720px) {
@@ -199,6 +199,7 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border: 1px s
   .control-panel { display: block; }
   .text-section { border-right: 0; }
   .motion-section { border-bottom: 1px solid var(--line); }
+  .technical-notes { border-right: 0; }
   .pipeline-notes > div { grid-template-columns: 78px 1fr; }
 }
 
