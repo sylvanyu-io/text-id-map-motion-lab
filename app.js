@@ -9,13 +9,23 @@
     intensity: 88,
     speed: 1,
     delay: 0.68,
-    showGeo: false,
+    showDebug: false,
   });
 
   const ui = {
     canvas: document.querySelector("#glCanvas"),
     idPreview: document.querySelector("#idPreview"),
     webglError: document.querySelector("#webglError"),
+    debugOverlay: document.querySelector("#debugOverlay"),
+    alphaDebugCanvas: document.querySelector("#alphaDebugCanvas"),
+    idDebugCanvas: document.querySelector("#idDebugCanvas"),
+    boundsDebugCanvas: document.querySelector("#boundsDebugCanvas"),
+    debugResolution: document.querySelector("#debugResolution"),
+    debugTime: document.querySelector("#debugTime"),
+    debugIntensity: document.querySelector("#debugIntensity"),
+    debugSpeed: document.querySelector("#debugSpeed"),
+    debugDelay: document.querySelector("#debugDelay"),
+    debugLutCount: document.querySelector("#debugLutCount"),
     textInput: document.querySelector("#textInput"),
     intensityInput: document.querySelector("#intensityInput"),
     intensityValue: document.querySelector("#intensityValue"),
@@ -27,7 +37,7 @@
     timeValue: document.querySelector("#timeValue"),
     playButton: document.querySelector("#playButton"),
     resetButton: document.querySelector("#resetButton"),
-    geoInput: document.querySelector("#geoInput"),
+    debugInput: document.querySelector("#debugInput"),
     characterLegend: document.querySelector("#characterLegend"),
   };
 
@@ -48,6 +58,10 @@
   idCanvas.width = TEXTURE_WIDTH;
   idCanvas.height = TEXTURE_HEIGHT;
   const idContext = idCanvas.getContext("2d", { alpha: true });
+
+  const alphaDebugContext = ui.alphaDebugCanvas.getContext("2d", { alpha: false });
+  const idDebugContext = ui.idDebugCanvas.getContext("2d", { alpha: false });
+  const boundsDebugContext = ui.boundsDebugCanvas.getContext("2d", { alpha: false });
 
   const gl = ui.canvas.getContext("webgl2", {
     alpha: false,
@@ -84,7 +98,7 @@
     uniform float uIntensity;
     uniform float uSpeed;
     uniform float uDelay;
-    uniform float uShowGeo;
+    uniform float uShowDebug;
 
     const vec2 TEXTURE_SIZE = vec2(1600.0, 900.0);
     const float CYCLE = 5.6;
@@ -225,7 +239,7 @@
       float quadEdge = 1.0 - smoothstep(0.003, 0.007, quadEdgeDistance);
       float diagonalDistance = abs(vUv.x + vUv.y - 1.0);
       float quadDiagonal = 1.0 - smoothstep(0.0015, 0.0045, diagonalDistance);
-      float geoLine = max(quadEdge, quadDiagonal) * uShowGeo;
+      float geoLine = max(quadEdge, quadDiagonal) * uShowDebug;
       vec3 background = STAGE;
       background += ICE * (gridX + gridY) * 0.010 * vignette;
       background += SIGNAL * ambientSweep * 0.027;
@@ -548,7 +562,7 @@
     intensity: gl.getUniformLocation(program, "uIntensity"),
     speed: gl.getUniformLocation(program, "uSpeed"),
     delay: gl.getUniformLocation(program, "uDelay"),
-    showGeo: gl.getUniformLocation(program, "uShowGeo"),
+    showDebug: gl.getUniformLocation(program, "uShowDebug"),
   };
 
   const quadBuffer = gl.createBuffer();
@@ -720,8 +734,81 @@
       boundsPixels,
     );
 
+    drawDebugTextures(packedPixels, boundsPixels);
     drawIdPreview();
     renderLegend();
+  }
+
+  function drawDebugTextures(packedPixels, boundsPixels) {
+    const alphaWidth = ui.alphaDebugCanvas.width;
+    const alphaHeight = ui.alphaDebugCanvas.height;
+    const alphaImage = alphaDebugContext.createImageData(alphaWidth, alphaHeight);
+    const idImage = idDebugContext.createImageData(alphaWidth, alphaHeight);
+
+    for (let y = 0; y < alphaHeight; y += 1) {
+      const sourceY = Math.min(TEXTURE_HEIGHT - 1, Math.floor((y / alphaHeight) * TEXTURE_HEIGHT));
+      for (let x = 0; x < alphaWidth; x += 1) {
+        const sourceX = Math.min(TEXTURE_WIDTH - 1, Math.floor((x / alphaWidth) * TEXTURE_WIDTH));
+        const sourceOffset = (sourceY * TEXTURE_WIDTH + sourceX) * 4;
+        const targetOffset = (y * alphaWidth + x) * 4;
+        const alpha = packedPixels[sourceOffset];
+        const idByte = packedPixels[sourceOffset + 1];
+        const paperMix = alpha / 255;
+
+        alphaImage.data[targetOffset] = Math.round(17 + 226 * paperMix);
+        alphaImage.data[targetOffset + 1] = Math.round(17 + 222 * paperMix);
+        alphaImage.data[targetOffset + 2] = Math.round(15 + 214 * paperMix);
+        alphaImage.data[targetOffset + 3] = 255;
+
+        if (idByte === 0) {
+          idImage.data[targetOffset] = 17;
+          idImage.data[targetOffset + 1] = 17;
+          idImage.data[targetOffset + 2] = 15;
+        } else {
+          const rank = idByte / 255;
+          idImage.data[targetOffset] = Math.round(55 + (233 - 55) * rank);
+          idImage.data[targetOffset + 1] = Math.round(224 + (79 - 224) * rank);
+          idImage.data[targetOffset + 2] = Math.round(235 + (48 - 235) * rank);
+        }
+        idImage.data[targetOffset + 3] = 255;
+      }
+    }
+
+    alphaDebugContext.putImageData(alphaImage, 0, 0);
+    idDebugContext.putImageData(idImage, 0, 0);
+
+    const lutWidth = ui.boundsDebugCanvas.width;
+    const lutHeight = ui.boundsDebugCanvas.height;
+    boundsDebugContext.fillStyle = "#11110f";
+    boundsDebugContext.fillRect(0, 0, lutWidth, lutHeight);
+    boundsDebugContext.strokeStyle = "rgba(243, 239, 229, 0.10)";
+    boundsDebugContext.lineWidth = 1;
+    for (let index = 0; index <= 8; index += 1) {
+      const x = Math.round((index / 8) * lutWidth) + 0.5;
+      boundsDebugContext.beginPath();
+      boundsDebugContext.moveTo(x, 0);
+      boundsDebugContext.lineTo(x, lutHeight);
+      boundsDebugContext.stroke();
+    }
+    boundsDebugContext.beginPath();
+    boundsDebugContext.moveTo(0, lutHeight * 0.5 + 0.5);
+    boundsDebugContext.lineTo(lutWidth, lutHeight * 0.5 + 0.5);
+    boundsDebugContext.stroke();
+
+    state.glyphs.forEach(({ idByte }) => {
+      const centerOffset = idByte * 4;
+      const sizeOffset = (256 + idByte) * 4;
+      const x = Math.round(((idByte + 0.5) / 256) * lutWidth);
+      const barWidth = Math.max(3, Math.ceil(lutWidth / 256));
+      boundsDebugContext.fillStyle = `rgb(${boundsPixels[centerOffset]}, ${boundsPixels[centerOffset + 1]}, ${boundsPixels[centerOffset + 2]})`;
+      boundsDebugContext.fillRect(x - 1, 1, barWidth, lutHeight * 0.5 - 2);
+      boundsDebugContext.fillStyle = `rgb(${boundsPixels[sizeOffset]}, ${boundsPixels[sizeOffset + 1]}, ${boundsPixels[sizeOffset + 2]})`;
+      boundsDebugContext.fillRect(x - 1, lutHeight * 0.5 + 1, barWidth, lutHeight * 0.5 - 2);
+      boundsDebugContext.fillStyle = "#e94f30";
+      boundsDebugContext.fillRect(x - 1, 0, barWidth, 2);
+    });
+
+    ui.debugLutCount.textContent = `256×2 · ${state.glyphs.length} ACTIVE`;
   }
 
   function drawIdPreview() {
@@ -783,6 +870,7 @@
       ui.canvas.height = height;
     }
     gl.viewport(0, 0, ui.canvas.width, ui.canvas.height);
+    ui.debugResolution.textContent = `${ui.canvas.width}×${ui.canvas.height}`;
   }
 
   function bindDrawState() {
@@ -800,7 +888,7 @@
     gl.uniform1f(locations.intensity, state.intensity / 100);
     gl.uniform1f(locations.speed, state.speed);
     gl.uniform1f(locations.delay, state.delay);
-    gl.uniform1f(locations.showGeo, state.showGeo ? 1 : 0);
+    gl.uniform1f(locations.showDebug, state.showDebug ? 1 : 0);
   }
 
   function draw() {
@@ -813,6 +901,13 @@
     const displayTime = state.time % TIMELINE_DURATION;
     ui.timelineInput.value = displayTime.toFixed(2);
     ui.timeValue.value = `${displayTime.toFixed(2).padStart(5, "0")} s`;
+    ui.debugTime.textContent = displayTime.toFixed(2);
+  }
+
+  function updateDebugUniforms() {
+    ui.debugIntensity.textContent = (state.intensity / 100).toFixed(2);
+    ui.debugSpeed.textContent = state.speed.toFixed(2);
+    ui.debugDelay.textContent = state.delay.toFixed(2);
   }
 
   function animate(timestamp) {
@@ -840,10 +935,13 @@
     ui.intensityInput.value = String(state.intensity);
     ui.speedInput.value = String(state.speed);
     ui.delayInput.value = String(state.delay);
-    ui.geoInput.checked = state.showGeo;
+    ui.debugInput.checked = state.showDebug;
+    ui.debugOverlay.hidden = !state.showDebug;
+    ui.debugOverlay.setAttribute("aria-hidden", String(!state.showDebug));
     ui.intensityValue.value = `${state.intensity}%`;
     ui.speedValue.value = `${state.speed.toFixed(2)}×`;
     ui.delayValue.value = state.delay.toFixed(2);
+    updateDebugUniforms();
     setPlaying(state.playing);
     updateTimelineUi();
   }
@@ -856,16 +954,19 @@
   ui.intensityInput.addEventListener("input", (event) => {
     state.intensity = Number(event.currentTarget.value);
     ui.intensityValue.value = `${state.intensity}%`;
+    updateDebugUniforms();
   });
 
   ui.speedInput.addEventListener("input", (event) => {
     state.speed = Number(event.currentTarget.value);
     ui.speedValue.value = `${state.speed.toFixed(2)}×`;
+    updateDebugUniforms();
   });
 
   ui.delayInput.addEventListener("input", (event) => {
     state.delay = Number(event.currentTarget.value);
     ui.delayValue.value = state.delay.toFixed(2);
+    updateDebugUniforms();
   });
 
   ui.timelineInput.addEventListener("input", (event) => {
@@ -877,8 +978,10 @@
 
   ui.playButton.addEventListener("click", () => setPlaying(!state.playing));
 
-  ui.geoInput.addEventListener("change", (event) => {
-    state.showGeo = event.currentTarget.checked;
+  ui.debugInput.addEventListener("change", (event) => {
+    state.showDebug = event.currentTarget.checked;
+    ui.debugOverlay.hidden = !state.showDebug;
+    ui.debugOverlay.setAttribute("aria-hidden", String(!state.showDebug));
     draw();
   });
 

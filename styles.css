@@ -82,6 +82,83 @@ h1 span, .lab-header strong, .debug-panel h2 span, .panel-caption strong { color
   pointer-events: none;
 }
 #glCanvas { display: block; width: 100%; aspect-ratio: 16 / 9; background: var(--stage); }
+.debug-overlay {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  overflow: hidden;
+  color: var(--stage-ink);
+  font-family: "SFMono-Regular", "SF Mono", Menlo, monospace;
+  pointer-events: none;
+}
+.debug-overlay[hidden] { display: none; }
+.debug-statusbar,
+.debug-metrics,
+.debug-uniforms,
+.debug-textures figure {
+  border: 1px solid rgba(243, 239, 229, 0.24);
+  background: rgba(17, 17, 15, 0.88);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(6px);
+}
+.debug-statusbar {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 28px;
+  padding: 5px 8px;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+}
+.debug-statusbar strong { color: var(--signal); font-size: 10px; }
+.debug-statusbar span { color: rgba(243, 239, 229, 0.72); }
+.debug-live { display: inline-flex; align-items: center; gap: 5px; }
+.debug-live::before { width: 5px; height: 5px; border-radius: 50%; background: var(--signal); box-shadow: 0 0 8px var(--signal); content: ""; }
+.debug-metrics {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: grid;
+  grid-template-columns: repeat(4, auto);
+  margin: 0;
+}
+.debug-metrics > div { min-width: 48px; padding: 5px 7px 4px; border-left: 1px solid rgba(243, 239, 229, 0.14); }
+.debug-metrics > div:first-child { border-left: 0; }
+.debug-metrics dt,
+.debug-metrics dd { margin: 0; }
+.debug-metrics dt { color: rgba(243, 239, 229, 0.48); font-size: 7px; letter-spacing: 0.08em; }
+.debug-metrics dd { margin-top: 1px; color: var(--stage-ink); font-size: 10px; font-weight: 700; }
+.debug-uniforms {
+  position: absolute;
+  top: 46px;
+  left: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  max-width: calc(100% - 20px);
+  padding: 5px 8px;
+  color: rgba(243, 239, 229, 0.48);
+  font-size: 7px;
+  letter-spacing: 0.05em;
+}
+.debug-uniforms b { color: var(--stage-ink); font-weight: 650; }
+.debug-textures {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  left: 10px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 0.82fr;
+  gap: 6px;
+}
+.debug-textures figure { min-width: 0; height: 126px; margin: 0; padding: 6px; }
+.debug-texture-label { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 5px; }
+.debug-texture-label span { color: var(--signal); font-size: 8px; font-weight: 700; letter-spacing: 0.06em; }
+.debug-texture-label small { overflow: hidden; color: rgba(243, 239, 229, 0.45); font-size: 6px; letter-spacing: 0.05em; text-overflow: ellipsis; white-space: nowrap; }
+.debug-textures canvas { display: block; width: 100%; height: calc(100% - 18px); border: 1px solid rgba(243, 239, 229, 0.14); background: var(--stage); image-rendering: pixelated; }
 .webgl-error { position: absolute; inset: 0; display: grid; place-items: center; padding: 32px; color: var(--stage-ink); background: var(--stage); text-align: center; }
 .webgl-error[hidden] { display: none; }
 
@@ -204,6 +281,13 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border: 1px s
   .lab-header p { text-align: left; }
   .workspace { gap: 12px; padding-top: 14px; }
   #glCanvas { min-height: 260px; object-fit: cover; }
+  .debug-statusbar { top: 7px; left: 7px; }
+  .debug-metrics { top: 7px; right: 7px; }
+  .debug-metrics > div { min-width: 36px; padding-inline: 4px; }
+  .debug-uniforms { display: none; }
+  .debug-textures { right: 7px; bottom: 7px; left: 7px; gap: 4px; }
+  .debug-textures figure { height: 94px; padding: 4px; }
+  .debug-texture-label small { display: none; }
   .control-panel { display: block; }
   .text-section { border-right: 0; }
   .motion-section { border-bottom: 1px solid var(--line); }

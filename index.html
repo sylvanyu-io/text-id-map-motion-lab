@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="light" />
     <title>Text ID Map Shader Lab</title>
-    <link rel="stylesheet" href="./styles.css?v=13" />
+    <link rel="stylesheet" href="./styles.css?v=14" />
   </head>
   <body>
     <main class="lab-shell">
@@ -17,6 +17,42 @@
       <section class="workspace" aria-label="文本 ID Map 实验区">
         <div class="stage-frame">
           <canvas id="glCanvas" aria-label="逐字 Shader 最终效果"></canvas>
+          <aside id="debugOverlay" class="debug-overlay" aria-label="渲染调试信息" aria-hidden="true" hidden>
+            <div class="debug-statusbar">
+              <strong>GPU DEBUG</strong>
+              <span>WEBGL 2</span>
+              <span class="debug-live">LIVE</span>
+            </div>
+
+            <dl class="debug-metrics">
+              <div><dt>DRAW</dt><dd>01</dd></div>
+              <div><dt>TRI</dt><dd>02</dd></div>
+              <div><dt>VERT</dt><dd>06</dd></div>
+              <div><dt>RT</dt><dd id="debugResolution">—</dd></div>
+            </dl>
+
+            <div class="debug-uniforms" aria-label="当前 Uniform">
+              <span>TIME <b id="debugTime">0.00</b></span>
+              <span>INTENSITY <b id="debugIntensity">0.88</b></span>
+              <span>SPEED <b id="debugSpeed">1.00</b></span>
+              <span>PHASE <b id="debugDelay">0.68</b></span>
+            </div>
+
+            <div class="debug-textures">
+              <figure>
+                <div class="debug-texture-label"><span>PACKED.R</span><small>1600×900 · GLYPH ALPHA</small></div>
+                <canvas id="alphaDebugCanvas" width="320" height="180" aria-label="字形 Alpha 纹理"></canvas>
+              </figure>
+              <figure>
+                <div class="debug-texture-label"><span>PACKED.G</span><small>1600×900 · CHARACTER ID</small></div>
+                <canvas id="idDebugCanvas" width="320" height="180" aria-label="字符 ID 纹理"></canvas>
+              </figure>
+              <figure class="bounds-texture">
+                <div class="debug-texture-label"><span>BOUNDS LUT</span><small id="debugLutCount">256×2 · 0 ACTIVE</small></div>
+                <canvas id="boundsDebugCanvas" width="320" height="48" aria-label="字符 Bounds LUT 纹理"></canvas>
+              </figure>
+            </div>
+          </aside>
           <div id="webglError" class="webgl-error" hidden></div>
         </div>
 
@@ -24,9 +60,9 @@
           <div class="control-header">
             <h2>参数</h2>
             <div class="control-actions">
-              <label class="switch-control" for="geoInput">
-                <span>显示 Geo</span>
-                <input id="geoInput" type="checkbox" />
+              <label class="switch-control" for="debugInput">
+                <span>显示调试信息</span>
+                <input id="debugInput" type="checkbox" />
                 <span class="switch-track" aria-hidden="true"></span>
               </label>
               <button id="resetButton" class="text-button" type="button">恢复默认</button>
@@ -101,6 +137,6 @@
       </section>
     </main>
 
-    <script src="./app.js?v=50"></script>
+    <script src="./app.js?v=51"></script>
   </body>
 </html>
