@@ -215,33 +215,6 @@
       vec2 cellSizePx = bounds.ba * TEXTURE_SIZE;
       vec2 inkSizePx = glyphInkSize(id);
       vec2 localPx = (textureUv - glyphCenter) * TEXTURE_SIZE;
-      vec2 absoluteLocalPx = abs(localPx);
-      vec2 cellHalfSizePx = cellSizePx * 0.5;
-      vec2 inkHalfSizePx = inkSizePx * 0.5;
-      float insideCellBounds =
-        step(absoluteLocalPx.x, cellHalfSizePx.x + 2.0) *
-        step(absoluteLocalPx.y, cellHalfSizePx.y + 2.0);
-      float insideInkBounds =
-        step(absoluteLocalPx.x, inkHalfSizePx.x + 2.0) *
-        step(absoluteLocalPx.y, inkHalfSizePx.y + 2.0);
-      float cellBorderDistance = min(
-        abs(absoluteLocalPx.x - cellHalfSizePx.x),
-        abs(absoluteLocalPx.y - cellHalfSizePx.y)
-      );
-      float inkBorderDistance = min(
-        abs(absoluteLocalPx.x - inkHalfSizePx.x),
-        abs(absoluteLocalPx.y - inkHalfSizePx.y)
-      );
-      float cellBoundsLine =
-        (1.0 - smoothstep(0.55, 2.1, cellBorderDistance)) *
-        insideCellBounds * uShowDebug;
-      float inkBoundsLine =
-        (1.0 - smoothstep(0.55, 2.1, inkBorderDistance)) *
-        insideInkBounds * uShowDebug;
-      float centerCross = max(
-        (1.0 - smoothstep(0.6, 1.8, absoluteLocalPx.x)) * step(absoluteLocalPx.y, 8.0),
-        (1.0 - smoothstep(0.6, 1.8, absoluteLocalPx.y)) * step(absoluteLocalPx.x, 8.0)
-      ) * uShowDebug;
       float idByte = floor(id * 255.0 + 0.5);
       float rank = clamp((id * 255.0 - 1.0) / 253.0, 0.0, 1.0);
       float time = mod(uTime, CYCLE);
@@ -533,9 +506,11 @@
       color = mix(color, textColor, baseAlpha);
       color += PAPER * baseAlpha * flash * 0.48;
       color = mix(color, SIGNAL, geoLine * 0.72);
-      color = mix(color, SIGNAL, cellBoundsLine * 0.88);
-      color = mix(color, ICE, inkBoundsLine * 0.82);
-      color = mix(color, PAPER, centerCross * 0.92);
+      vec3 debugIdColor = rank < 0.5
+        ? mix(ICE, PAPER, rank * 2.0)
+        : mix(PAPER, SIGNAL, (rank - 0.5) * 2.0);
+      float debugGlyphMask = clamp(baseAlpha + outline * 0.28, 0.0, 1.0);
+      color = mix(color, debugIdColor, debugGlyphMask * uShowDebug * 0.94);
       fragColor = vec4(color, 1.0);
     }
   `;
