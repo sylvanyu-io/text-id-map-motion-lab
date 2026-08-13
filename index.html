@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="light" />
     <title>Text ID Map Shader Lab</title>
-    <link rel="stylesheet" href="./styles.css?v=12" />
+    <link rel="stylesheet" href="./styles.css?v=13" />
   </head>
   <body>
     <main class="lab-shell">
@@ -23,7 +23,14 @@
         <aside class="control-panel" aria-label="Shader 参数">
           <div class="control-header">
             <h2>参数</h2>
-            <button id="resetButton" class="text-button" type="button">恢复默认</button>
+            <div class="control-actions">
+              <label class="switch-control" for="geoInput">
+                <span>显示 Geo</span>
+                <input id="geoInput" type="checkbox" />
+                <span class="switch-track" aria-hidden="true"></span>
+              </label>
+              <button id="resetButton" class="text-button" type="button">恢复默认</button>
+            </div>
           </div>
 
           <section class="control-section text-section">
@@ -94,6 +101,6 @@
       </section>
     </main>
 
-    <script src="./app.js?v=49"></script>
+    <script src="./app.js?v=50"></script>
   </body>
 </html>

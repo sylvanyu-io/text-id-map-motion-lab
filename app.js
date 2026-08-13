@@ -9,6 +9,7 @@
     intensity: 88,
     speed: 1,
     delay: 0.68,
+    showGeo: false,
   });
 
   const ui = {
@@ -26,6 +27,7 @@
     timeValue: document.querySelector("#timeValue"),
     playButton: document.querySelector("#playButton"),
     resetButton: document.querySelector("#resetButton"),
+    geoInput: document.querySelector("#geoInput"),
     characterLegend: document.querySelector("#characterLegend"),
   };
 
@@ -82,6 +84,7 @@
     uniform float uIntensity;
     uniform float uSpeed;
     uniform float uDelay;
+    uniform float uShowGeo;
 
     const vec2 TEXTURE_SIZE = vec2(1600.0, 900.0);
     const float CYCLE = 5.6;
@@ -218,11 +221,17 @@
       float gridY = 1.0 - smoothstep(0.0, 0.022, abs(fract(vUv.y * 11.25) - 0.5));
       float vignette = 1.0 - smoothstep(0.18, 0.91, distance(vUv, vec2(0.5)));
       float ambientSweep = exp(-34.0 * abs(vUv.x - fract(time / CYCLE) * 1.16 + 0.08));
+      float quadEdgeDistance = min(min(vUv.x, 1.0 - vUv.x), min(vUv.y, 1.0 - vUv.y));
+      float quadEdge = 1.0 - smoothstep(0.003, 0.007, quadEdgeDistance);
+      float diagonalDistance = abs(vUv.x + vUv.y - 1.0);
+      float quadDiagonal = 1.0 - smoothstep(0.0015, 0.0045, diagonalDistance);
+      float geoLine = max(quadEdge, quadDiagonal) * uShowGeo;
       vec3 background = STAGE;
       background += ICE * (gridX + gridY) * 0.010 * vignette;
       background += SIGNAL * ambientSweep * 0.027;
       background *= mix(0.76, 1.0, vignette);
       background += vec3(scanline * 0.009);
+      background = mix(background, SIGNAL, geoLine * 0.68);
 
       if (hasCell < 0.5) {
         fragColor = vec4(background, 1.0);
@@ -488,6 +497,7 @@
       color += mix(PAPER, ICE, fragmentNoise * 0.30) * shardEdge * baseAlpha * 0.52;
       color = mix(color, textColor, baseAlpha);
       color += PAPER * baseAlpha * flash * 0.48;
+      color = mix(color, SIGNAL, geoLine * 0.72);
       fragColor = vec4(color, 1.0);
     }
   `;
@@ -538,6 +548,7 @@
     intensity: gl.getUniformLocation(program, "uIntensity"),
     speed: gl.getUniformLocation(program, "uSpeed"),
     delay: gl.getUniformLocation(program, "uDelay"),
+    showGeo: gl.getUniformLocation(program, "uShowGeo"),
   };
 
   const quadBuffer = gl.createBuffer();
@@ -789,6 +800,7 @@
     gl.uniform1f(locations.intensity, state.intensity / 100);
     gl.uniform1f(locations.speed, state.speed);
     gl.uniform1f(locations.delay, state.delay);
+    gl.uniform1f(locations.showGeo, state.showGeo ? 1 : 0);
   }
 
   function draw() {
@@ -828,6 +840,7 @@
     ui.intensityInput.value = String(state.intensity);
     ui.speedInput.value = String(state.speed);
     ui.delayInput.value = String(state.delay);
+    ui.geoInput.checked = state.showGeo;
     ui.intensityValue.value = `${state.intensity}%`;
     ui.speedValue.value = `${state.speed.toFixed(2)}×`;
     ui.delayValue.value = state.delay.toFixed(2);
@@ -863,6 +876,11 @@
   });
 
   ui.playButton.addEventListener("click", () => setPlaying(!state.playing));
+
+  ui.geoInput.addEventListener("change", (event) => {
+    state.showGeo = event.currentTarget.checked;
+    draw();
+  });
 
   ui.resetButton.addEventListener("click", () => {
     Object.assign(state, DEFAULTS, { time: 0 });
