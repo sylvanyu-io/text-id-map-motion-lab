@@ -20,22 +20,14 @@
           <aside id="debugOverlay" class="debug-overlay" aria-label="渲染调试信息" aria-hidden="true" hidden>
             <div class="debug-statusbar">
               <strong>GPU DEBUG</strong>
-              <span>WEBGL 2</span>
+              <span>1 DRAW · 1 QUAD · 2 TRI</span>
               <span class="debug-live">LIVE</span>
             </div>
 
-            <dl class="debug-metrics">
-              <div><dt>DRAW</dt><dd>01</dd></div>
-              <div><dt>TRI</dt><dd>02</dd></div>
-              <div><dt>VERT</dt><dd>06</dd></div>
-              <div><dt>RT</dt><dd id="debugResolution">—</dd></div>
-            </dl>
-
-            <div class="debug-uniforms" aria-label="当前 Uniform">
-              <span>TIME <b id="debugTime">0.00</b></span>
-              <span>INTENSITY <b id="debugIntensity">0.88</b></span>
-              <span>SPEED <b id="debugSpeed">1.00</b></span>
-              <span>PHASE <b id="debugDelay">0.68</b></span>
+            <div class="debug-legend" aria-label="边界图例">
+              <span class="legend-cell">CELL</span>
+              <span class="legend-ink">INK</span>
+              <span class="legend-center">CENTER</span>
             </div>
 
             <div class="debug-textures">
@@ -47,9 +39,9 @@
                 <div class="debug-texture-label"><span>PACKED.G</span><small>1600×900 · CHARACTER ID</small></div>
                 <canvas id="idDebugCanvas" width="320" height="180" aria-label="字符 ID 纹理"></canvas>
               </figure>
-              <figure class="bounds-texture">
-                <div class="debug-texture-label"><span>BOUNDS LUT</span><small id="debugLutCount">256×2 · 0 ACTIVE</small></div>
-                <canvas id="boundsDebugCanvas" width="320" height="48" aria-label="字符 Bounds LUT 纹理"></canvas>
+              <figure>
+                <div class="debug-texture-label"><span>HASH NOISE</span><small>PROCEDURAL · NO TEXTURE</small></div>
+                <canvas id="noiseDebugCanvas" width="320" height="180" aria-label="程序化 Hash Noise"></canvas>
               </figure>
             </div>
           </aside>
@@ -117,7 +109,11 @@
               </div>
               <div>
                 <dt>字符域</dt>
-                <dd>四向 Padding · Bounds LUT · 单 Quad</dd>
+                <dd>Bounds LUT → Center / Cell / Ink</dd>
+              </div>
+              <div>
+                <dt>随机场</dt>
+                <dd>程序化 Hash → 切片 / 碎片 / 消散</dd>
               </div>
             </dl>
           </section>
@@ -137,6 +133,6 @@
       </section>
     </main>
 
-    <script src="./app.js?v=51"></script>
+    <script src="./app.js?v=52"></script>
   </body>
 </html>

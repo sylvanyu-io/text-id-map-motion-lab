@@ -19,13 +19,7 @@
     debugOverlay: document.querySelector("#debugOverlay"),
     alphaDebugCanvas: document.querySelector("#alphaDebugCanvas"),
     idDebugCanvas: document.querySelector("#idDebugCanvas"),
-    boundsDebugCanvas: document.querySelector("#boundsDebugCanvas"),
-    debugResolution: document.querySelector("#debugResolution"),
-    debugTime: document.querySelector("#debugTime"),
-    debugIntensity: document.querySelector("#debugIntensity"),
-    debugSpeed: document.querySelector("#debugSpeed"),
-    debugDelay: document.querySelector("#debugDelay"),
-    debugLutCount: document.querySelector("#debugLutCount"),
+    noiseDebugCanvas: document.querySelector("#noiseDebugCanvas"),
     textInput: document.querySelector("#textInput"),
     intensityInput: document.querySelector("#intensityInput"),
     intensityValue: document.querySelector("#intensityValue"),
@@ -61,7 +55,7 @@
 
   const alphaDebugContext = ui.alphaDebugCanvas.getContext("2d", { alpha: false });
   const idDebugContext = ui.idDebugCanvas.getContext("2d", { alpha: false });
-  const boundsDebugContext = ui.boundsDebugCanvas.getContext("2d", { alpha: false });
+  const noiseDebugContext = ui.noiseDebugCanvas.getContext("2d", { alpha: false });
 
   const gl = ui.canvas.getContext("webgl2", {
     alpha: false,
@@ -221,6 +215,33 @@
       vec2 cellSizePx = bounds.ba * TEXTURE_SIZE;
       vec2 inkSizePx = glyphInkSize(id);
       vec2 localPx = (textureUv - glyphCenter) * TEXTURE_SIZE;
+      vec2 absoluteLocalPx = abs(localPx);
+      vec2 cellHalfSizePx = cellSizePx * 0.5;
+      vec2 inkHalfSizePx = inkSizePx * 0.5;
+      float insideCellBounds =
+        step(absoluteLocalPx.x, cellHalfSizePx.x + 2.0) *
+        step(absoluteLocalPx.y, cellHalfSizePx.y + 2.0);
+      float insideInkBounds =
+        step(absoluteLocalPx.x, inkHalfSizePx.x + 2.0) *
+        step(absoluteLocalPx.y, inkHalfSizePx.y + 2.0);
+      float cellBorderDistance = min(
+        abs(absoluteLocalPx.x - cellHalfSizePx.x),
+        abs(absoluteLocalPx.y - cellHalfSizePx.y)
+      );
+      float inkBorderDistance = min(
+        abs(absoluteLocalPx.x - inkHalfSizePx.x),
+        abs(absoluteLocalPx.y - inkHalfSizePx.y)
+      );
+      float cellBoundsLine =
+        (1.0 - smoothstep(0.55, 2.1, cellBorderDistance)) *
+        insideCellBounds * uShowDebug;
+      float inkBoundsLine =
+        (1.0 - smoothstep(0.55, 2.1, inkBorderDistance)) *
+        insideInkBounds * uShowDebug;
+      float centerCross = max(
+        (1.0 - smoothstep(0.6, 1.8, absoluteLocalPx.x)) * step(absoluteLocalPx.y, 8.0),
+        (1.0 - smoothstep(0.6, 1.8, absoluteLocalPx.y)) * step(absoluteLocalPx.x, 8.0)
+      ) * uShowDebug;
       float idByte = floor(id * 255.0 + 0.5);
       float rank = clamp((id * 255.0 - 1.0) / 253.0, 0.0, 1.0);
       float time = mod(uTime, CYCLE);
@@ -512,6 +533,9 @@
       color = mix(color, textColor, baseAlpha);
       color += PAPER * baseAlpha * flash * 0.48;
       color = mix(color, SIGNAL, geoLine * 0.72);
+      color = mix(color, SIGNAL, cellBoundsLine * 0.88);
+      color = mix(color, ICE, inkBoundsLine * 0.82);
+      color = mix(color, PAPER, centerCross * 0.92);
       fragColor = vec4(color, 1.0);
     }
   `;
@@ -734,12 +758,12 @@
       boundsPixels,
     );
 
-    drawDebugTextures(packedPixels, boundsPixels);
+    drawDebugTextures(packedPixels);
     drawIdPreview();
     renderLegend();
   }
 
-  function drawDebugTextures(packedPixels, boundsPixels) {
+  function drawDebugTextures(packedPixels) {
     const alphaWidth = ui.alphaDebugCanvas.width;
     const alphaHeight = ui.alphaDebugCanvas.height;
     const alphaImage = alphaDebugContext.createImageData(alphaWidth, alphaHeight);
@@ -777,38 +801,32 @@
     alphaDebugContext.putImageData(alphaImage, 0, 0);
     idDebugContext.putImageData(idImage, 0, 0);
 
-    const lutWidth = ui.boundsDebugCanvas.width;
-    const lutHeight = ui.boundsDebugCanvas.height;
-    boundsDebugContext.fillStyle = "#11110f";
-    boundsDebugContext.fillRect(0, 0, lutWidth, lutHeight);
-    boundsDebugContext.strokeStyle = "rgba(243, 239, 229, 0.10)";
-    boundsDebugContext.lineWidth = 1;
-    for (let index = 0; index <= 8; index += 1) {
-      const x = Math.round((index / 8) * lutWidth) + 0.5;
-      boundsDebugContext.beginPath();
-      boundsDebugContext.moveTo(x, 0);
-      boundsDebugContext.lineTo(x, lutHeight);
-      boundsDebugContext.stroke();
+    const noiseWidth = ui.noiseDebugCanvas.width;
+    const noiseHeight = ui.noiseDebugCanvas.height;
+    const noiseImage = noiseDebugContext.createImageData(noiseWidth, noiseHeight);
+    const fract = (value) => value - Math.floor(value);
+    const hashNoise = (x, y) => {
+      let vx = fract(x * 123.34);
+      let vy = fract(y * 456.21);
+      const dot = vx * (vx + 45.32) + vy * (vy + 45.32);
+      vx = fract(vx + dot);
+      vy = fract(vy + dot);
+      return fract(vx * vy);
+    };
+
+    for (let y = 0; y < noiseHeight; y += 1) {
+      for (let x = 0; x < noiseWidth; x += 1) {
+        const value = hashNoise(Math.floor(x / 3) + 17, Math.floor(y / 3) + 29);
+        const offset = (y * noiseWidth + x) * 4;
+        const shade = Math.round(22 + value * 205);
+        const highlighted = value > 0.86;
+        noiseImage.data[offset] = highlighted ? 233 : shade;
+        noiseImage.data[offset + 1] = highlighted ? 79 : shade;
+        noiseImage.data[offset + 2] = highlighted ? 48 : shade;
+        noiseImage.data[offset + 3] = 255;
+      }
     }
-    boundsDebugContext.beginPath();
-    boundsDebugContext.moveTo(0, lutHeight * 0.5 + 0.5);
-    boundsDebugContext.lineTo(lutWidth, lutHeight * 0.5 + 0.5);
-    boundsDebugContext.stroke();
-
-    state.glyphs.forEach(({ idByte }) => {
-      const centerOffset = idByte * 4;
-      const sizeOffset = (256 + idByte) * 4;
-      const x = Math.round(((idByte + 0.5) / 256) * lutWidth);
-      const barWidth = Math.max(3, Math.ceil(lutWidth / 256));
-      boundsDebugContext.fillStyle = `rgb(${boundsPixels[centerOffset]}, ${boundsPixels[centerOffset + 1]}, ${boundsPixels[centerOffset + 2]})`;
-      boundsDebugContext.fillRect(x - 1, 1, barWidth, lutHeight * 0.5 - 2);
-      boundsDebugContext.fillStyle = `rgb(${boundsPixels[sizeOffset]}, ${boundsPixels[sizeOffset + 1]}, ${boundsPixels[sizeOffset + 2]})`;
-      boundsDebugContext.fillRect(x - 1, lutHeight * 0.5 + 1, barWidth, lutHeight * 0.5 - 2);
-      boundsDebugContext.fillStyle = "#e94f30";
-      boundsDebugContext.fillRect(x - 1, 0, barWidth, 2);
-    });
-
-    ui.debugLutCount.textContent = `256×2 · ${state.glyphs.length} ACTIVE`;
+    noiseDebugContext.putImageData(noiseImage, 0, 0);
   }
 
   function drawIdPreview() {
@@ -870,7 +888,6 @@
       ui.canvas.height = height;
     }
     gl.viewport(0, 0, ui.canvas.width, ui.canvas.height);
-    ui.debugResolution.textContent = `${ui.canvas.width}×${ui.canvas.height}`;
   }
 
   function bindDrawState() {
@@ -901,13 +918,6 @@
     const displayTime = state.time % TIMELINE_DURATION;
     ui.timelineInput.value = displayTime.toFixed(2);
     ui.timeValue.value = `${displayTime.toFixed(2).padStart(5, "0")} s`;
-    ui.debugTime.textContent = displayTime.toFixed(2);
-  }
-
-  function updateDebugUniforms() {
-    ui.debugIntensity.textContent = (state.intensity / 100).toFixed(2);
-    ui.debugSpeed.textContent = state.speed.toFixed(2);
-    ui.debugDelay.textContent = state.delay.toFixed(2);
   }
 
   function animate(timestamp) {
@@ -941,7 +951,6 @@
     ui.intensityValue.value = `${state.intensity}%`;
     ui.speedValue.value = `${state.speed.toFixed(2)}×`;
     ui.delayValue.value = state.delay.toFixed(2);
-    updateDebugUniforms();
     setPlaying(state.playing);
     updateTimelineUi();
   }
@@ -954,19 +963,16 @@
   ui.intensityInput.addEventListener("input", (event) => {
     state.intensity = Number(event.currentTarget.value);
     ui.intensityValue.value = `${state.intensity}%`;
-    updateDebugUniforms();
   });
 
   ui.speedInput.addEventListener("input", (event) => {
     state.speed = Number(event.currentTarget.value);
     ui.speedValue.value = `${state.speed.toFixed(2)}×`;
-    updateDebugUniforms();
   });
 
   ui.delayInput.addEventListener("input", (event) => {
     state.delay = Number(event.currentTarget.value);
     ui.delayValue.value = state.delay.toFixed(2);
-    updateDebugUniforms();
   });
 
   ui.timelineInput.addEventListener("input", (event) => {
