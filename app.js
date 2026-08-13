@@ -47,7 +47,7 @@
   idCanvas.height = TEXTURE_HEIGHT;
   const idContext = idCanvas.getContext("2d", { alpha: true });
 
-  const gl = ui.canvas.getContext("webgl", {
+  const gl = ui.canvas.getContext("webgl2", {
     alpha: false,
     antialias: false,
     depth: false,
@@ -57,13 +57,13 @@
 
   if (!gl) {
     ui.webglError.hidden = false;
-    ui.webglError.textContent = "当前浏览器无法创建 WebGL 上下文。";
+    ui.webglError.textContent = "当前浏览器无法创建 WebGL 2 上下文。";
     return;
   }
 
-  const vertexShaderSource = `
-    attribute vec2 aPosition;
-    varying vec2 vUv;
+  const vertexShaderSource = `#version 300 es
+    layout(location = 0) in vec2 aPosition;
+    out vec2 vUv;
 
     void main() {
       vUv = aPosition * 0.5 + 0.5;
@@ -71,10 +71,11 @@
     }
   `;
 
-  const fragmentShaderSource = `
+  const fragmentShaderSource = `#version 300 es
     precision highp float;
 
-    varying vec2 vUv;
+    in vec2 vUv;
+    layout(location = 0) out vec4 fragColor;
     uniform sampler2D uPackedTexture;
     uniform sampler2D uBoundsTexture;
     uniform float uTime;
@@ -113,7 +114,7 @@
     }
 
     float glyphTap(vec2 uv, float expectedId) {
-      vec4 sampled = texture2D(uPackedTexture, uv);
+      vec4 sampled = texture(uPackedTexture, uv);
       return sampled.r * idMatch(sampled.g, expectedId) * inTexture(uv);
     }
 
@@ -131,7 +132,7 @@
     }
 
     float sameGlyph(vec2 uv, float expectedId) {
-      float sampledId = texture2D(uPackedTexture, uv).g;
+      float sampledId = texture(uPackedTexture, uv).g;
       return idMatch(sampledId, expectedId) * inTexture(uv);
     }
 
@@ -143,8 +144,8 @@
     vec4 glyphBounds(float id) {
       float idByte = floor(id * 255.0 + 0.5);
       float x = (idByte + 0.5) / 256.0;
-      vec4 centerBytes = texture2D(uBoundsTexture, vec2(x, 0.25));
-      vec4 sizeBytes = texture2D(uBoundsTexture, vec2(x, 0.75));
+      vec4 centerBytes = texture(uBoundsTexture, vec2(x, 0.25));
+      vec4 sizeBytes = texture(uBoundsTexture, vec2(x, 0.75));
       return vec4(
         unpack16(centerBytes.rg),
         unpack16(centerBytes.ba),
@@ -155,7 +156,7 @@
 
     vec2 glyphInkSize(float id) {
       float idByte = floor(id * 255.0 + 0.5);
-      vec4 sizeBytes = texture2D(
+      vec4 sizeBytes = texture(
         uBoundsTexture,
         vec2((idByte + 0.5) / 256.0, 0.75)
       );
@@ -172,9 +173,9 @@
     }
 
     float spring(float progress) {
-      float active = step(0.0, progress) * (1.0 - step(1.0, progress));
+      float activeWindow = step(0.0, progress) * (1.0 - step(1.0, progress));
       float p = clamp(progress, 0.0, 1.0);
-      return sin(p * 15.0) * exp(-4.2 * p) * active;
+      return sin(p * 15.0) * exp(-4.2 * p) * activeWindow;
     }
 
     mat2 rotate2d(float angle) {
@@ -195,7 +196,7 @@
 
     void main() {
       vec2 textureUv = vec2(vUv.x, 1.0 - vUv.y);
-      vec4 packedSample = texture2D(uPackedTexture, textureUv);
+      vec4 packedSample = texture(uPackedTexture, textureUv);
       float id = packedSample.g;
       float hasCell = step(0.002, id);
       vec4 bounds = glyphBounds(id);
@@ -215,7 +216,7 @@
       float scanline = sin(vUv.y * 900.0 * 3.14159265) * 0.5 + 0.5;
       float gridX = 1.0 - smoothstep(0.0, 0.014, abs(fract(vUv.x * 20.0) - 0.5));
       float gridY = 1.0 - smoothstep(0.0, 0.022, abs(fract(vUv.y * 11.25) - 0.5));
-      float vignette = smoothstep(0.91, 0.18, distance(vUv, vec2(0.5)));
+      float vignette = 1.0 - smoothstep(0.18, 0.91, distance(vUv, vec2(0.5)));
       float ambientSweep = exp(-34.0 * abs(vUv.x - fract(time / CYCLE) * 1.16 + 0.08));
       vec3 background = STAGE;
       background += ICE * (gridX + gridY) * 0.010 * vignette;
@@ -224,7 +225,7 @@
       background += vec3(scanline * 0.009);
 
       if (hasCell < 0.5) {
-        gl_FragColor = vec4(background, 1.0);
+        fragColor = vec4(background, 1.0);
         return;
       }
 
@@ -487,7 +488,7 @@
       color += mix(PAPER, ICE, fragmentNoise * 0.30) * shardEdge * baseAlpha * 0.52;
       color = mix(color, textColor, baseAlpha);
       color += PAPER * baseAlpha * flash * 0.48;
-      gl_FragColor = vec4(color, 1.0);
+      fragColor = vec4(color, 1.0);
     }
   `;
 
