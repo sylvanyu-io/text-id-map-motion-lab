@@ -57,23 +57,54 @@
   const idDebugContext = ui.idDebugCanvas.getContext("2d", { alpha: false });
   const noiseDebugContext = ui.noiseDebugCanvas.getContext("2d", { alpha: false });
 
-  const gl = ui.canvas.getContext("webgl2", {
+  const contextAttributes = {
     alpha: false,
     antialias: false,
     depth: false,
     stencil: false,
     preserveDrawingBuffer: true,
-  });
+  };
+
+  let gl = ui.canvas.getContext("webgl2", contextAttributes);
+  const isWebGL2 = Boolean(gl);
+  if (!gl) {
+    gl =
+      ui.canvas.getContext("webgl", contextAttributes) ||
+      ui.canvas.getContext("experimental-webgl", contextAttributes);
+  }
 
   if (!gl) {
     ui.webglError.hidden = false;
-    ui.webglError.textContent = "当前浏览器无法创建 WebGL 2 上下文。";
+    ui.webglError.textContent = "当前浏览器无法创建 WebGL 上下文。";
     return;
   }
 
-  const vertexShaderSource = `#version 300 es
-    layout(location = 0) in vec2 aPosition;
-    out vec2 vUv;
+  const rendererName = isWebGL2 ? "WebGL 2" : "WebGL 1";
+  const requiredTextureSize = Math.max(TEXTURE_WIDTH, TEXTURE_HEIGHT);
+  const maxTextureSize = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+  if (maxTextureSize < requiredTextureSize) {
+    ui.webglError.hidden = false;
+    ui.webglError.textContent = `${rendererName} 最大纹理尺寸为 ${maxTextureSize}px，低于当前文字贴图需要的 ${requiredTextureSize}px。`;
+    return;
+  }
+
+  if (!isWebGL2) {
+    const highFloat = gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.HIGH_FLOAT);
+    if (!highFloat || highFloat.precision === 0) {
+      ui.webglError.hidden = false;
+      ui.webglError.textContent = "当前 WebGL 1 设备不支持片元着色器 highp 精度。";
+      return;
+    }
+  }
+
+  const vertexShaderHeader = isWebGL2
+    ? `#version 300 es
+layout(location = 0) in vec2 aPosition;
+out vec2 vUv;`
+    : `attribute vec2 aPosition;
+varying vec2 vUv;`;
+
+  const vertexShaderSource = `${vertexShaderHeader}
 
     void main() {
       vUv = aPosition * 0.5 + 0.5;
@@ -81,11 +112,19 @@
     }
   `;
 
-  const fragmentShaderSource = `#version 300 es
-    precision highp float;
+  const fragmentShaderHeader = isWebGL2
+    ? `#version 300 es
+precision highp float;
+in vec2 vUv;
+layout(location = 0) out vec4 fragColor;
+#define SAMPLE_TEXTURE texture
+#define OUTPUT_COLOR fragColor`
+    : `precision highp float;
+varying vec2 vUv;
+#define SAMPLE_TEXTURE texture2D
+#define OUTPUT_COLOR gl_FragColor`;
 
-    in vec2 vUv;
-    layout(location = 0) out vec4 fragColor;
+  const fragmentShaderSource = `${fragmentShaderHeader}
     uniform sampler2D uPackedTexture;
     uniform sampler2D uBoundsTexture;
     uniform float uTime;
@@ -125,7 +164,7 @@
     }
 
     float glyphTap(vec2 uv, float expectedId) {
-      vec4 sampled = texture(uPackedTexture, uv);
+      vec4 sampled = SAMPLE_TEXTURE(uPackedTexture, uv);
       return sampled.r * idMatch(sampled.g, expectedId) * inTexture(uv);
     }
 
@@ -143,7 +182,7 @@
     }
 
     float sameGlyph(vec2 uv, float expectedId) {
-      float sampledId = texture(uPackedTexture, uv).g;
+      float sampledId = SAMPLE_TEXTURE(uPackedTexture, uv).g;
       return idMatch(sampledId, expectedId) * inTexture(uv);
     }
 
@@ -155,8 +194,8 @@
     vec4 glyphBounds(float id) {
       float idByte = floor(id * 255.0 + 0.5);
       float x = (idByte + 0.5) / 256.0;
-      vec4 centerBytes = texture(uBoundsTexture, vec2(x, 0.25));
-      vec4 sizeBytes = texture(uBoundsTexture, vec2(x, 0.75));
+      vec4 centerBytes = SAMPLE_TEXTURE(uBoundsTexture, vec2(x, 0.25));
+      vec4 sizeBytes = SAMPLE_TEXTURE(uBoundsTexture, vec2(x, 0.75));
       return vec4(
         unpack16(centerBytes.rg),
         unpack16(centerBytes.ba),
@@ -167,7 +206,7 @@
 
     vec2 glyphInkSize(float id) {
       float idByte = floor(id * 255.0 + 0.5);
-      vec4 sizeBytes = texture(
+      vec4 sizeBytes = SAMPLE_TEXTURE(
         uBoundsTexture,
         vec2((idByte + 0.5) / 256.0, 0.75)
       );
@@ -207,7 +246,7 @@
 
     void main() {
       vec2 textureUv = vec2(vUv.x, 1.0 - vUv.y);
-      vec4 packedSample = texture(uPackedTexture, textureUv);
+      vec4 packedSample = SAMPLE_TEXTURE(uPackedTexture, textureUv);
       float id = packedSample.g;
       float hasCell = step(0.002, id);
       vec4 bounds = glyphBounds(id);
@@ -242,7 +281,7 @@
       background = mix(background, SIGNAL, geoLine * 0.68);
 
       if (hasCell < 0.5) {
-        fragColor = vec4(background, 1.0);
+        OUTPUT_COLOR = vec4(background, 1.0);
         return;
       }
 
@@ -511,7 +550,7 @@
         : mix(PAPER, SIGNAL, (rank - 0.5) * 2.0);
       float debugGlyphMask = clamp(baseAlpha + outline * 0.28, 0.0, 1.0);
       color = mix(color, debugIdColor, debugGlyphMask * uShowDebug * 0.94);
-      fragColor = vec4(color, 1.0);
+      OUTPUT_COLOR = vec4(color, 1.0);
     }
   `;
 
@@ -549,9 +588,10 @@
     program = createProgram();
   } catch (error) {
     ui.webglError.hidden = false;
-    ui.webglError.textContent = `Shader 初始化失败：${error.message}`;
+    ui.webglError.textContent = `Shader 初始化失败（${rendererName}）：${error.message}`;
     return;
   }
+  ui.canvas.dataset.renderer = isWebGL2 ? "webgl2" : "webgl1";
 
   const locations = {
     position: gl.getAttribLocation(program, "aPosition"),
